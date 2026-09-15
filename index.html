@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Delta-ACT learns local corrections for closed-loop robotic manipulation from limited demonstrations.">
+    <title>Delta-ACT | Learning to Correct</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23172c42'/%3E%3Cpath d='M16 40c8 0 10-16 20-16h12M38 14l10 10-10 10' fill='none' stroke='%235e9eea' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="#top" aria-label="Delta-ACT home">Delta-ACT</a>
+      <nav aria-label="Primary navigation">
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#demos">Demos</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-copy">
+          <p class="eyebrow">Closed-loop robotic manipulation</p>
+          <h1>Learning to correct,<br><em>while acting.</em></h1>
+          <p class="lede">Delta-ACT predicts short relative motions from the latest observation and learns corrective behavior from automatically collected trajectories.</p>
+          <div class="hero-actions">
+            <a class="button" href="#demos">Watch demonstrations</a>
+            <a class="text-link" href="#method">How it works <span>↓</span></a>
+          </div>
+        </div>
+        <figure class="hero-figure">
+          <video class="overview" src="assets/overview.mp4" controls playsinline preload="metadata" poster="assets/overview-poster.jpg"></video>
+          <figcaption>2-minute overview — click to play, with narration</figcaption>
+        </figure>
+      </section>
+
+      <section class="problem section narrow" aria-labelledby="problem-title">
+        <p class="eyebrow">The problem</p>
+        <h2 id="problem-title">A new observation only helps if the policy knows how to recover.</h2>
+        <p>With limited clean demonstrations, small prediction and execution errors move the robot into states it has not learned to handle. Delta-ACT pairs frequent observation updates with training data that explicitly teaches local corrections.</p>
+      </section>
+
+      <section id="method" class="method section" aria-labelledby="method-title">
+        <div class="method-heading">
+          <p class="eyebrow">Method</p>
+          <h2 id="method-title">One policy for nominal motion and local correction</h2>
+        </div>
+        <img class="method-figure" src="assets/method.png" alt="Delta-ACT pipeline: correction data collection, policy inputs and outputs, and closed-loop execution.">
+        <div class="method-interface">
+          <div class="method-interface-copy">
+            <h3>The action interface</h3>
+            <p>At each replan the policy takes the current single-view RGB observation, the language instruction, and the robot state, and outputs one relative command <code>a<sub>t</sub> = (Δp<sub>t</sub>, Δr<sub>t</sub>, g<sub>t</sub>)</code>: a position increment, a world-frame rotation increment, and a gripper command. Each command is tracked over <em>m</em> control frames before the policy reobserves. Normal and corrective trajectories train a single policy through position, rotation, and gripper losses — no separate recovery module is needed at inference.</p>
+          </div>
+          <div class="method-interface-side">
+            <div class="loop"><span>Observe</span><i>→</i><span>Predict Δ</span><i>→</i><span>Execute m frames</span><i>→</i><span>Reobserve</span></div>
+            <p class="loop-note">An average command length of ≈2 cm preserves precision while limiting error accumulation.</p>
+          </div>
+        </div>
+        <figure class="method-teaser">
+          <img src="assets/teaser.png" alt="Comparing action interfaces: keyframe-based methods, action chunking, and Delta-ACT's single-command closed loop.">
+          <figcaption>Action interfaces compared: keyframe-based methods, action chunking, and Delta-ACT's single-command closed loop.</figcaption>
+        </figure>
+        <div class="method-demo">
+          <div class="method-demo-copy">
+            <h3>Corrective data from the real robot</h3>
+            <p>Eligible segment starts are perturbed and the controller plans directly to the next subgoal. The resulting trajectories explicitly teach the policy how to recover from states that clean demonstrations rarely cover.</p>
+          </div>
+          <div class="method-demo-grid">
+            <figure><video src="assets/correction-close-fridge.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Close fridge</figcaption></figure>
+            <figure><video src="assets/correction-open-drawer.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Open drawer</figcaption></figure>
+            <figure><video src="assets/correction-pick-block.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Pick &amp; place block</figcaption></figure>
+            <figure><video src="assets/correction-put-item.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Put item in drawer</figcaption></figure>
+          </div>
+        </div>
+        <div class="steps">
+          <article>
+            <span>01</span>
+            <h3>Collect correction data</h3>
+            <p>Perturb eligible segment starts and plan directly to the next subgoal.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Predict relative motion</h3>
+            <p>Use the current RGB observation, language instruction, and robot state.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Update from feedback</h3>
+            <p>Execute a local motion, observe again, and predict the next correction.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="results section" aria-labelledby="results-title">
+        <div>
+          <p class="eyebrow">Results</p>
+          <h2 id="results-title">Corrective trajectories make limited data more useful.</h2>
+        </div>
+        <div class="metrics" role="list">
+          <article role="listitem"><strong>+22.3</strong><span>percentage points on three long-horizon tasks at a matched trajectory count, rising from 44.0% with normal trajectories to 66.3% with corrective trajectories</span></article>
+          <article role="listitem"><strong>55.7%</strong><span>mean success on 20 RLBench tasks using normal demonstrations only, vs 39.2% for ACT and 43.6% for Diffusion Policy</span></article>
+          <article role="listitem"><strong>62.5%</strong><span>mean real-robot success across four tasks, compared with 50.0% for ACT</span></article>
+        </div>
+        <div class="result-visuals">
+          <figure><img src="assets/scaling.png" alt="Comparison of normal-only and correction-augmented training on long-horizon tasks."><figcaption>Matched-data comparison on long-horizon tasks</figcaption></figure>
+          <figure><img src="assets/real.png" alt="Franka Panda real-world setup and execution sequences for four tasks."><figcaption>Four real-world tasks with a Franka Panda arm</figcaption></figure>
+        </div>
+      </section>
+
+      <section id="demos" class="demos section" aria-labelledby="demos-title">
+        <p class="eyebrow">Demonstrations</p>
+        <h2 id="demos-title">Selected executions</h2>
+        <p class="demo-intro">Real-world comparisons use matched playback speeds within each task, and outcome labels follow the experiment file names. Simulation clips play at original speed.</p>
+        <div class="comparison-grid">
+          <article class="comparison">
+            <div class="comparison-heading"><h3>Close fridge</h3><span>4× speed</span></div>
+            <div class="dual-video">
+              <figure><video src="assets/fridge-act.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>ACT · failure example</figcaption></figure>
+              <figure><video src="assets/fridge-delta.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Delta-ACT · success example</figcaption></figure>
+            </div>
+            <p>Task success over 10 trials: ACT 9/10 · Delta-ACT 10/10</p>
+          </article>
+          <article class="comparison">
+            <div class="comparison-heading"><h3>Put item in drawer</h3><span>8× speed</span></div>
+            <div class="dual-video">
+              <figure><video src="assets/drawer-act.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>ACT · failure example</figcaption></figure>
+              <figure><video src="assets/drawer-delta.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Delta-ACT · success example</figcaption></figure>
+            </div>
+            <p>Task success over 10 trials: ACT 1/10 · Delta-ACT 3/10</p>
+          </article>
+          <article class="comparison">
+            <div class="comparison-heading"><h3>Open drawer</h3><span>4× speed</span></div>
+            <div class="dual-video">
+              <figure><video src="assets/real-open-act.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>ACT · failure example</figcaption></figure>
+              <figure><video src="assets/real-open-delta.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Delta-ACT · success example</figcaption></figure>
+            </div>
+            <p>Task success over 10 trials: ACT 7/10 · Delta-ACT 9/10</p>
+          </article>
+          <article class="comparison">
+            <div class="comparison-heading"><h3>Pick &amp; place block</h3><span>4× speed</span></div>
+            <div class="dual-video">
+              <figure><video src="assets/real-pick-act.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>ACT · failure example</figcaption></figure>
+              <figure><video src="assets/real-pick-delta.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Delta-ACT · success example</figcaption></figure>
+            </div>
+            <p>Task success over 10 trials: ACT 3/10 · Delta-ACT 3/10</p>
+          </article>
+        </div>
+        <div class="sim-section">
+          <div class="sim-heading">
+            <p class="eyebrow">Simulation</p>
+            <h3>Task coverage</h3>
+            <p>Delta-ACT executions at original speed across the RLBench task suite.</p>
+          </div>
+          <div class="sim-grid">
+            <figure><video src="assets/sim-close-box.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Close box</figcaption></figure>
+            <figure><video src="assets/sim-close-fridge.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Close fridge</figcaption></figure>
+            <figure><video src="assets/sim-meat-grill.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Meat off grill</figcaption></figure>
+            <figure><video src="assets/sim-open-box.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Open box</figcaption></figure>
+            <figure><video src="assets/sim-open-drawer.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Open drawer</figcaption></figure>
+            <figure><video src="assets/sim-phone-base.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Phone on base</figcaption></figure>
+            <figure><video src="assets/sim-pick-up-cup.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Pick up cup</figcaption></figure>
+            <figure><video src="assets/sim-push-button.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Push button</figcaption></figure>
+            <figure><video src="assets/sim-drawer.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Put item in drawer</figcaption></figure>
+            <figure><video src="assets/sim-put-shoes.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Put shoes in box</figcaption></figure>
+            <figure><video src="assets/sim-reach-drag.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Reach and drag</figcaption></figure>
+            <figure><video src="assets/sim-slide-block.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Slide block to target</figcaption></figure>
+            <figure><video src="assets/sim-stack-wine.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Stack wine</figcaption></figure>
+            <figure><video src="assets/sim-sweep.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Sweep to dustpan</figcaption></figure>
+            <figure><video src="assets/sim-frame-off-hanger.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Frame off hanger</figcaption></figure>
+            <figure><video src="assets/sim-lid-off-saucepan.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Lid off saucepan</figcaption></figure>
+            <figure><video src="assets/sim-take-shoes.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Shoes out of box</figcaption></figure>
+            <figure><video src="assets/sim-umbrella-out.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Umbrella out of stand</figcaption></figure>
+            <figure><video src="assets/sim-toilet-seat.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Toilet seat down</figcaption></figure>
+            <figure><video src="assets/sim-turn-tap.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Turn tap</figcaption></figure>
+            <figure><video src="assets/sim-water-plants.mp4" muted autoplay loop playsinline preload="metadata"></video><figcaption>Water plants</figcaption></figure>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Delta-ACT · Anonymous project page</span>
+      <span>2026</span>
+    </footer>
+    <script>
+      // Keep 33 autoplaying clips light: play only while in view, pause off-screen.
+      (function () {
+        var vids = document.querySelectorAll('video[autoplay]');
+        if (!('IntersectionObserver' in window)) return;
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.play()['catch'](function () {}); }
+            else { e.target.pause(); }
+          });
+        }, { threshold: 0.15 });
+        vids.forEach(function (v) { io.observe(v); });
+      })();
+    </script>
+  </body>
+</html>
